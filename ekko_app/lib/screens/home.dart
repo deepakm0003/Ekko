@@ -17,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late Future<List<Order>> _orders;
+  int _version = -1;
 
   @override
   void initState() {
@@ -24,7 +25,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _reload();
   }
 
-  void _reload() => _orders = Repository.orders(context.read<AppState>().user!.id);
+  void _reload() {
+    final app = context.read<AppState>();
+    _version = app.ordersVersion;
+    _orders = Repository.orders(app.user!.id);
+  }
 
   Future<void> _startAdvisor() async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AdvisorScreen()));
@@ -33,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    context.watch<AppState>();
+    if (context.watch<AppState>().ordersVersion != _version) _reload();
     return SafeArea(
       child: RefreshIndicator(
         color: EkkoColors.red,

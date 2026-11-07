@@ -32,7 +32,15 @@ class AppState extends ChangeNotifier {
   String? businessName;
   KycReport? kycReport;
 
+  /// Bumped when an order is placed so order lists refresh.
+  int ordersVersion = 0;
+
   AppState(this.data);
+
+  void orderPlaced() {
+    ordersVersion++;
+    resetJourney();
+  }
 
   S get s => S(lang);
   PricingEngine get pricing => data.recommender.pricing;
@@ -133,7 +141,12 @@ class AppState extends ChangeNotifier {
 /// Blocks screenshots/screen recording while KYC data is on screen.
 class SecureWindow {
   static const _ch = MethodChannel('ekko/secure_window');
+
+  /// Only for recording the demo video (--dart-define=EKKO_ALLOW_CAPTURE=true).
+  static const _allowCapture = bool.fromEnvironment('EKKO_ALLOW_CAPTURE');
+
   static Future<void> set(bool on) async {
+    if (_allowCapture) return;
     try {
       await _ch.invokeMethod('set', on);
     } catch (_) {}

@@ -44,8 +44,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       signedName: _name.text.trim(),
     );
     if (!mounted) return;
-    app.resetJourney();
-    await Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => _PlacedScreen(orderId: id)));
+    // Clear the whole journey stack so Back from here goes Home, not to a stale plan.
+    Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => _PlacedScreen(orderId: id)), (r) => r.isFirst);
+    app.orderPlaced();
   }
 
   @override

@@ -30,3 +30,7 @@ Thumbs.db
 .idea/
 .vscode/
 *.iml
+
+# Demo recordings and release builds (share via GitHub Releases)
+demo_video/
+release/

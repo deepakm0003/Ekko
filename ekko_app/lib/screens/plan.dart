@@ -112,6 +112,7 @@ class _PlanScreenState extends State<PlanScreen> {
   @override
   Widget build(BuildContext context) {
     final app = context.watch<AppState>();
+    if (app.profile == null || app.bundle == null) return const Scaffold();
     final p = app.profile!;
     final b = app.bundle!;
     final cat = app.data.catalogue;
