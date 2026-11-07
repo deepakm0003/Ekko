@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: ekko-backend
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: EKKO_APP_KEY
+        generateValue: true
+      - key: EKKO_MODEL
+        value: claude-opus-5-5
