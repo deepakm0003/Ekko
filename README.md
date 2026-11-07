@@ -39,6 +39,17 @@ Full analysis: [`RESEARCH_Udyam_Digital.md`](RESEARCH_Udyam_Digital.md) · build
 | Stretch: propensity score | Logistic regression trained on the leads, run on-device. |
 | Results from the data | Insights screen: funnel, drop reasons, segment economics, churn vs status calls, channels, language gap, propensity deciles, targets. |
 
+### What makes Ekko different
+
+| Feature | Why it matters |
+|---|---|
+| **Digital Health Score** | Shows the owner how ready their business is today vs with the plan (internet, always-online, payments, customer reach, security, work & data) — value, not just price. |
+| **Live rules self-test** | 13 catalogue edge cases plus 1,792 generated profiles run on the phone in seconds, with 0 rule violations. Judges can watch the engine refuse ineligible products. |
+| **Pick-your-slot installation** | The owner books the engineer visit in the tracker — scheduling was the #1 reason for status calls. |
+| **Share plan on WhatsApp** | Owners decide with family or partners; the plan goes out as plain text in one tap. |
+| **Partner code + earnings** | An owner can credit the partner who helped; the partner cockpit shows assisted orders and commission, so digital adds to the field force instead of competing with it. |
+| **"Replaces N vendors"** | Makes the one-bill, one-support-number promise concrete for every plan. |
+
 ### Smart KYC on the 12 specimen applicants
 
 | Applicant | Ekko's verdict | Why |
