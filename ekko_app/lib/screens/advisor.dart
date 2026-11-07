@@ -496,119 +496,217 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
     context.watch<AppState>();
     final chips = _chips();
     final multi = _step == Step.needs;
-    final progress = (_step.index / Step.done.index).clamp(0.0, 1.0);
+    final total = Step.done.index;
+    final idx = _step.index.clamp(0, total);
     return Scaffold(
+      backgroundColor: EkkoColors.canvas,
       appBar: AppBar(
-        title: Text(context.t('adv_title')),
+        titleSpacing: 0,
+        title: Row(children: [
+          const _BotAvatar(size: 36),
+          const Gap(Sp.md),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(context.t('adv_title'), style: T.h3),
+            Text(_step == Step.done ? 'Building your plan' : 'Step ${idx + 1} of $total', style: T.small),
+          ]),
+        ]),
+        actions: const [Padding(padding: EdgeInsets.only(right: 16), child: Center(child: ModeBadge()))],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(3),
-          child: LinearProgressIndicator(
-            value: progress, minHeight: 3, color: EkkoColors.red, backgroundColor: EkkoColors.line),
+          preferredSize: const Size.fromHeight(4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: Sp.xl),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(end: idx / total),
+              duration: const Duration(milliseconds: 400),
+              builder: (_, v, __) => ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(value: v, minHeight: 4, color: EkkoColors.red, backgroundColor: EkkoColors.line),
+              ),
+            ),
+          ),
         ),
-        actions: const [Padding(padding: EdgeInsets.only(right: 12), child: Center(child: ModeBadge()))],
       ),
       body: Column(children: [
         Expanded(
           child: ListView.builder(
             controller: _scroll,
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+            padding: const EdgeInsets.fromLTRB(Sp.lg, Sp.lg, Sp.lg, Sp.sm),
             itemCount: _msgs.length + (_typing ? 1 : 0),
-            itemBuilder: (_, i) => i == _msgs.length ? const _TypingBubble() : _Bubble(_msgs[i]),
+            itemBuilder: (_, i) => i == _msgs.length
+                ? const _TypingBubble()
+                : _Bubble(_msgs[i], showAvatar: _msgs[i].bot && (i == 0 || !_msgs[i - 1].bot)),
           ),
         ),
-        if (!_typing && _step != Step.done)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 230),
-            padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
-            child: SingleChildScrollView(
-              child: Wrap(spacing: 8, runSpacing: 8, children: [
-                for (final c in chips)
-                  multi
-                      ? FilterChip(
-                          label: Text(c.label),
-                          selected: _picked.contains(c.value),
-                          checkmarkColor: EkkoColors.red,
-                          onSelected: (_) => _onChip(c),
-                        )
-                      : ActionChip(label: Text(c.label), onPressed: () => _onChip(c)),
-              ]),
+        Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+            boxShadow: [BoxShadow(color: Color(0x140F1115), blurRadius: 24, offset: Offset(0, -6))],
+          ),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            if (!_typing && _step != Step.done && chips.isNotEmpty)
+              Container(
+                constraints: const BoxConstraints(maxHeight: 220),
+                padding: const EdgeInsets.fromLTRB(Sp.lg, Sp.lg, Sp.lg, 0),
+                child: SingleChildScrollView(
+                  child: Wrap(spacing: 8, runSpacing: 8, children: [
+                    for (final c in chips)
+                      multi
+                          ? FilterChip(
+                              label: Text(c.label),
+                              selected: _picked.contains(c.value),
+                              showCheckmark: true,
+                              checkmarkColor: EkkoColors.red,
+                              side: BorderSide(
+                                  color: _picked.contains(c.value) ? EkkoColors.red : EkkoColors.line, width: 1.3),
+                              onSelected: (_) => _onChip(c),
+                            )
+                          : ActionChip(label: Text(c.label), onPressed: () => _onChip(c)),
+                  ]),
+                ),
+              ),
+            if (multi && !_typing)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(Sp.lg, Sp.md, Sp.lg, 0),
+                child: Row(children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _confirmNeeds(mobileOnly: true),
+                      child: Text(context.t('mobile_only'), textAlign: TextAlign.center),
+                    ),
+                  ),
+                  const Gap(Sp.md),
+                  Expanded(
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                      onPressed: () => _confirmNeeds(),
+                      child: Text('${context.t('done_selecting')}${_picked.isEmpty ? '' : ' (${_picked.length})'}'),
+                    ),
+                  ),
+                ]),
+              ),
+            _Composer(
+              controller: _input,
+              listening: _listening,
+              hint: _listening ? context.t('listening') : context.t('type_message'),
+              numeric: _step == Step.pincode,
+              onSend: _onText,
+              onMic: _toggleMic,
             ),
-          ),
-        if (multi && !_typing)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-            child: Row(children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _confirmNeeds(mobileOnly: true),
-                  child: Text(context.t('mobile_only'), textAlign: TextAlign.center),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton(
-                  style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
-                  onPressed: () => _confirmNeeds(),
-                  child: Text('${context.t('done_selecting')}${_picked.isEmpty ? '' : ' (${_picked.length})'}'),
-                ),
-              ),
-            ]),
-          ),
-        _Composer(
-          controller: _input,
-          listening: _listening,
-          hint: _listening ? context.t('listening') : context.t('type_message'),
-          numeric: _step == Step.pincode,
-          onSend: _onText,
-          onMic: _toggleMic,
+          ]),
         ),
       ]),
     );
   }
 }
 
+class _BotAvatar extends StatelessWidget {
+  final double size;
+  const _BotAvatar({this.size = 30});
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(colors: [Color(0xFFFF3B3B), EkkoColors.redDark]),
+        ),
+        child: Icon(Icons.auto_awesome_rounded, color: Colors.white, size: size * 0.5),
+      );
+}
+
 class _Bubble extends StatelessWidget {
   final _Msg m;
-  const _Bubble(this.m);
+  final bool showAvatar;
+  const _Bubble(this.m, {this.showAvatar = false});
   @override
   Widget build(BuildContext context) {
     final bot = m.bot;
-    return Align(
-      alignment: bot ? Alignment.centerLeft : Alignment.centerRight,
+    final maxW = MediaQuery.of(context).size.width * 0.74;
+    final bubble = TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, child) => Opacity(opacity: v, child: Transform.translate(offset: Offset(0, (1 - v) * 10), child: child)),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(maxWidth: maxW),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: bot ? (m.tone == null ? EkkoColors.surface : m.tone!.withValues(alpha: 0.1)) : EkkoColors.red,
+          color: bot ? (m.tone == null ? Colors.white : m.tone!.withValues(alpha: 0.09)) : null,
+          gradient: bot ? null : const LinearGradient(colors: [Color(0xFFFF2B2B), EkkoColors.red]),
+          border: bot && m.tone != null ? Border.all(color: m.tone!.withValues(alpha: 0.25)) : null,
+          boxShadow: bot && m.tone == null ? EkkoShadow.soft : null,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(bot ? 4 : 16),
-            bottomRight: Radius.circular(bot ? 16 : 4),
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(bot ? 6 : 20),
+            bottomRight: Radius.circular(bot ? 20 : 6),
           ),
         ),
         child: Text(m.text,
-            style: TextStyle(
-                color: bot ? (m.tone ?? EkkoColors.ink) : Colors.white, fontSize: 15, height: 1.35,
-                fontWeight: bot && m.tone != null ? FontWeight.w600 : FontWeight.w400)),
+            style: T.body.copyWith(
+                color: bot ? (m.tone ?? EkkoColors.ink) : Colors.white,
+                fontSize: 15,
+                fontWeight: bot && m.tone != null ? FontWeight.w700 : FontWeight.w500)),
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Sp.sm + 2),
+      child: Row(
+        mainAxisAlignment: bot ? MainAxisAlignment.start : MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (bot) ...[
+            showAvatar ? const _BotAvatar(size: 28) : const SizedBox(width: 28),
+            const Gap(Sp.sm),
+          ],
+          bubble,
+        ],
       ),
     );
   }
 }
 
-class _TypingBubble extends StatelessWidget {
+class _TypingBubble extends StatefulWidget {
   const _TypingBubble();
   @override
-  Widget build(BuildContext context) => Align(
-        alignment: Alignment.centerLeft,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(color: EkkoColors.surface, borderRadius: BorderRadius.circular(16)),
-          child: const SizedBox(
-              width: 28, height: 10, child: LinearProgressIndicator(color: EkkoColors.red, minHeight: 3)),
-        ),
+  State<_TypingBubble> createState() => _TypingBubbleState();
+}
+
+class _TypingBubbleState extends State<_TypingBubble> with SingleTickerProviderStateMixin {
+  late final _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: Sp.sm),
+        child: Row(children: [
+          const _BotAvatar(size: 28),
+          const Gap(Sp.sm),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: EkkoShadow.soft),
+            child: AnimatedBuilder(
+              animation: _c,
+              builder: (_, __) => Row(children: [
+                for (var i = 0; i < 3; i++)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: EkkoColors.red.withValues(alpha: 0.25 + 0.75 * (((_c.value * 3 - i) % 3) < 1 ? 1 : 0.2)),
+                    ),
+                  ),
+              ]),
+            ),
+          ),
+        ]),
       );
 }
 
@@ -632,7 +730,7 @@ class _Composer extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+          padding: const EdgeInsets.fromLTRB(Sp.lg, Sp.md, Sp.lg, Sp.md),
           child: Row(children: [
             Expanded(
               child: TextField(
@@ -641,23 +739,40 @@ class _Composer extends StatelessWidget {
                 inputFormatters: [LengthLimitingTextInputFormatter(200)],
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
-                decoration: InputDecoration(hintText: hint),
+                decoration: InputDecoration(
+                  hintText: hint,
+                  fillColor: EkkoColors.canvas,
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                  focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30), borderSide: const BorderSide(color: EkkoColors.red, width: 1.6)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                ),
               ),
             ),
-            const SizedBox(width: 8),
-            IconButton.filled(
-              style: IconButton.styleFrom(
-                  backgroundColor: listening ? EkkoColors.red : EkkoColors.redSoft,
-                  foregroundColor: listening ? Colors.white : EkkoColors.red,
-                  fixedSize: const Size(48, 48)),
-              onPressed: onMic,
-              icon: Icon(listening ? Icons.stop : Icons.mic),
+            const Gap(Sp.sm),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: listening ? EkkoColors.red : EkkoColors.redSoft,
+                boxShadow: listening ? EkkoShadow.red : null,
+              ),
+              child: IconButton(
+                onPressed: onMic,
+                iconSize: 24,
+                padding: const EdgeInsets.all(12),
+                icon: Icon(listening ? Icons.stop_rounded : Icons.mic_rounded, color: listening ? Colors.white : EkkoColors.red),
+              ),
             ),
-            const SizedBox(width: 6),
-            IconButton.filled(
-              style: IconButton.styleFrom(backgroundColor: EkkoColors.ink, fixedSize: const Size(48, 48)),
-              onPressed: () => onSend(),
-              icon: const Icon(Icons.send, color: Colors.white),
+            const Gap(Sp.sm),
+            Container(
+              decoration: const BoxDecoration(shape: BoxShape.circle, color: EkkoColors.ink),
+              child: IconButton(
+                onPressed: () => onSend(),
+                iconSize: 22,
+                padding: const EdgeInsets.all(13),
+                icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+              ),
             ),
           ]),
         ),
