@@ -88,6 +88,7 @@ class Repository {
     required String? businessName,
     required String? gstinMasked,
     required String signedName,
+    String? partnerCode,
   }) async {
     final db = await Db.instance;
     final id = _orderId();
@@ -111,7 +112,12 @@ class Repository {
         'signed_name': signedName,
         'created_at': now.millisecondsSinceEpoch,
       });
-      await tx.insert('order_events', {'order_id': id, 'stage': Stage.placed.name, 'ts': now.millisecondsSinceEpoch});
+      await tx.insert('order_events', {
+        'order_id': id,
+        'stage': Stage.placed.name,
+        'note': partnerCode == null ? null : 'partner:$partnerCode',
+        'ts': now.millisecondsSinceEpoch,
+      });
       await tx.insert('order_events', {
         'order_id': id,
         'stage': Stage.kyc.name,
@@ -156,6 +162,29 @@ class Repository {
               DateTime.fromMillisecondsSinceEpoch(e['ts'] as int)),
       ],
     );
+  }
+
+  /// Owner picks the engineer visit slot themselves — no scheduling call.
+  static Future<void> bookSlot(String orderId, String slot, String actor) async {
+    final o = await order(orderId);
+    if (o == null) return;
+    final db = await Db.instance;
+    await db.transaction((tx) async {
+      if (o.status.index < Stage.scheduled.index) {
+        await tx.update('orders', {'status': Stage.scheduled.name}, where: 'id = ?', whereArgs: [orderId]);
+      }
+      await tx.insert('order_events', {'order_id': orderId, 'stage': Stage.scheduled.name, 'note': 'slot:$slot', 'ts': Db.now});
+    });
+    await Db.audit(actor, 'slot_booked', orderId);
+  }
+
+  /// Orders a channel partner helped close (partner code entered at checkout).
+  static Future<List<Map<String, Object?>>> assistedOrders(String partnerId) async {
+    final db = await Db.instance;
+    return db.rawQuery(
+        'SELECT o.id, o.business_name, o.monthly, o.created_at FROM orders o '
+        'JOIN order_events e ON e.order_id = o.id WHERE e.note = ? ORDER BY o.created_at DESC',
+        ['partner:$partnerId']);
   }
 
   /// Moves an order to its next stage (demo control for the live tracker).

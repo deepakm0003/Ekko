@@ -19,11 +19,19 @@ final _date = DateFormat('d MMM');
 final _dateTime = DateFormat('d MMM, h:mm a');
 
 /// Proactive message the owner gets at each stage (sent as WhatsApp/SMS in production).
+String? bookedSlot(Order o) {
+  for (final e in o.events.reversed) {
+    if (e.note != null && e.note!.startsWith('slot:')) return e.note!.substring(5);
+  }
+  return null;
+}
+
 String stageUpdate(Order o, Stage s) => switch (s) {
       Stage.placed => 'Order ${o.id} received. Your KYC is being verified instantly.',
       Stage.kyc => 'KYC verified ✓ — no paperwork pending. Scheduling your installation now.',
-      Stage.scheduled =>
-        'Engineer visit booked for ${_date.format(o.eta.subtract(const Duration(days: 1)))}, 10 am – 1 pm. Reply 1 to reschedule.',
+      Stage.scheduled => bookedSlot(o) != null
+          ? 'Engineer visit confirmed for ${bookedSlot(o)} — the slot you picked. Reply 1 to reschedule.'
+          : 'Engineer visit booked for ${_date.format(o.eta.subtract(const Duration(days: 1)))}, 10 am – 1 pm. Reply 1 to reschedule.',
       Stage.install => 'Your engineer is on the way. Lines and devices will be activated on site.',
       Stage.active => 'All services are live! One bill, one support number: 121 for business.',
     };
@@ -131,6 +139,12 @@ class _TrackerScreenState extends State<TrackerScreen> {
     setState(() => _order = Repository.order(widget.orderId));
   }
 
+  Future<void> _book(String slot) async {
+    await Repository.bookSlot(widget.orderId, slot, context.read<AppState>().user!.id);
+    setState(() => _order = Repository.order(widget.orderId));
+    if (mounted) context.toast('Visit booked: $slot');
+  }
+
   Future<void> _callback(Order o) async {
     final app = context.read<AppState>();
     await Repository.saveLead(
@@ -171,6 +185,10 @@ class _TrackerScreenState extends State<TrackerScreen> {
                 ),
               ]),
             ),
+            if (o.status.index <= Stage.kyc.index) ...[
+              const SizedBox(height: 16),
+              _SlotPicker(start: o.createdAt, onBook: _book),
+            ],
             const SizedBox(height: 16),
             for (final s in Stage.values) _TimelineRow(
               title: context.t(_stageKeys[s]!),
@@ -267,6 +285,76 @@ class _TimelineRow extends StatelessWidget {
                 Text(_dateTime.format(at!), style: const TextStyle(fontSize: 12, color: EkkoColors.inkSoft)),
             ]),
           ),
+        ),
+      ]),
+    );
+  }
+}
+
+
+/// Owner picks the engineer visit — the #1 reason customers used to call.
+class _SlotPicker extends StatefulWidget {
+  final DateTime start;
+  final ValueChanged<String> onBook;
+  const _SlotPicker({required this.start, required this.onBook});
+  @override
+  State<_SlotPicker> createState() => _SlotPickerState();
+}
+
+class _SlotPickerState extends State<_SlotPicker> {
+  int _day = 0;
+  int _win = 0;
+  static const _windows = ['9 – 12', '12 – 3', '3 – 6'];
+
+  @override
+  Widget build(BuildContext context) {
+    final days = [for (var i = 1; i <= 4; i++) widget.start.add(Duration(days: i))];
+    return EkkoCard(
+      padding: const EdgeInsets.all(Sp.lg),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          IconBadge(Icons.event_rounded, size: 38),
+          Gap(Sp.md),
+          Expanded(child: Text('Pick your installation slot', style: T.h3)),
+        ]),
+        const Gap(Sp.md),
+        Row(children: [
+          for (var i = 0; i < days.length; i++)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => setState(() => _day = i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: _day == i ? EkkoColors.red : EkkoColors.canvas,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Column(children: [
+                    Text(DateFormat('EEE').format(days[i]),
+                        style: T.small.copyWith(color: _day == i ? Colors.white70 : EkkoColors.muted)),
+                    Text(DateFormat('d').format(days[i]),
+                        style: T.h2.copyWith(color: _day == i ? Colors.white : EkkoColors.ink)),
+                  ]),
+                ),
+              ),
+            ),
+        ]),
+        const Gap(Sp.md),
+        Wrap(spacing: 8, children: [
+          for (var i = 0; i < _windows.length; i++)
+            ChoiceChip(
+              label: Text(_windows[i]),
+              selected: _win == i,
+              onSelected: (_) => setState(() => _win = i),
+              selectedColor: EkkoColors.redSoft,
+            ),
+        ]),
+        const Gap(Sp.md),
+        FilledButton(
+          onPressed: () => widget.onBook('${DateFormat('EEE d MMM').format(days[_day])}, ${_windows[_win]}'),
+          child: const Text('Book this slot'),
         ),
       ]),
     );

@@ -16,12 +16,14 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   final _name = TextEditingController();
+  final _partner = TextEditingController();
   bool _accept = false;
   bool _paying = false;
 
   @override
   void dispose() {
     _name.dispose();
+    _partner.dispose();
     super.dispose();
   }
 
@@ -42,6 +44,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       businessName: app.businessName ?? app.profile!.businessType,
       gstinMasked: g == null ? null : Gstin.mask(g),
       signedName: _name.text.trim(),
+      partnerCode: RegExp(r'^PTR-\d{4}$').hasMatch(_partner.text.trim().toUpperCase())
+          ? _partner.text.trim().toUpperCase()
+          : null,
     );
     if (!mounted) return;
     // Clear the whole journey stack so Back from here goes Home, not to a stale plan.
@@ -58,14 +63,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final cat = app.data.catalogue;
     return Scaffold(
       appBar: AppBar(title: Text(context.t('review_title'))),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        if (app.businessName != null)
-          Text(app.businessName!, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 10),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(children: [
+      body: ListView(padding: const EdgeInsets.fromLTRB(Sp.xl, 0, Sp.xl, Sp.xxl), children: [
+        if (app.businessName != null) ...[
+          Text(app.businessName!, style: T.h1),
+          const Gap(Sp.xs),
+          const Row(children: [
+            Icon(Icons.verified_rounded, color: EkkoColors.green, size: 16),
+            Gap(4),
+            Text('KYC verified', style: TextStyle(color: EkkoColors.green, fontWeight: FontWeight.w700)),
+          ]),
+        ],
+        const Gap(Sp.lg),
+        EkkoCard(
+          padding: const EdgeInsets.all(Sp.xl),
+          child: Column(children: [
               for (final l in q.lines)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
@@ -80,8 +91,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               _row(context.t('setup_once'), rupees(q.setup)),
               _row(context.t('contract'), q.noLockIn ? context.t('no_lock_in') : context.t('months', {'n': q.contractMonths})),
               _row(context.t('install_eta', {'n': q.installDays}), ''),
-            ]),
-          ),
+          ]),
         ),
         const SizedBox(height: 18),
         TextField(
@@ -99,7 +109,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           title: Text(context.t('esign_cb')),
         ),
         const SizedBox(height: 6),
-        InfoBanner('${context.t('pay_title')} · demo payment, no money moves.', icon: Icons.account_balance_wallet_outlined),
+        TextField(
+          controller: _partner,
+          textCapitalization: TextCapitalization.characters,
+          decoration: const InputDecoration(
+            labelText: 'Helped by an Accel partner? Partner code (optional)',
+            hintText: 'e.g. PTR-1001',
+            prefixIcon: Icon(Icons.storefront_rounded),
+          ),
+        ),
+        const Gap(Sp.md),
+        InfoBanner('${context.t('pay_title')} · demo payment, no money moves.', icon: Icons.account_balance_wallet_rounded),
       ]),
       bottomNavigationBar: BottomBar(children: [
         FilledButton(

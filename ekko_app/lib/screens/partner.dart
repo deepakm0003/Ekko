@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../engine/profile.dart';
 import '../services/repository.dart';
 import '../state/app_state.dart';
+import '../config/demo_seed.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 
@@ -66,6 +67,7 @@ class PartnerScreen extends StatefulWidget {
 class _PartnerScreenState extends State<PartnerScreen> {
   List<_Lead>? _leads;
   Set<String> _contacted = {};
+  List<Map<String, Object?>> _assisted = const [];
   Segment? _seg;
   String _q = '';
 
@@ -79,6 +81,7 @@ class _PartnerScreenState extends State<PartnerScreen> {
     final app = context.read<AppState>();
     final appRows = await Repository.appLeads();
     final contacted = await Repository.contactedIds();
+    final assisted = await Repository.assistedOrders(DemoSeed.partnerId);
     final list = <_Lead>[
       for (final r in appRows)
         () {
@@ -98,6 +101,7 @@ class _PartnerScreenState extends State<PartnerScreen> {
       setState(() {
         _leads = list;
         _contacted = contacted;
+        _assisted = assisted;
       });
     }
   }
@@ -122,8 +126,10 @@ class _PartnerScreenState extends State<PartnerScreen> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(context.t('leads_sub', {'auc': auc}), style: const TextStyle(color: EkkoColors.inkSoft)),
-                const SizedBox(height: 10),
+                Text(context.t('leads_sub', {'auc': auc}), style: T.bodySoft),
+                const Gap(Sp.md),
+                _EarningsCard(assisted: _assisted),
+                const Gap(Sp.md),
                 TextField(
                   onChanged: (v) => setState(() => _q = v),
                   decoration: const InputDecoration(prefixIcon: Icon(Icons.search), hintText: 'Search name or city'),
@@ -304,6 +310,38 @@ class _LeadDetail extends StatelessWidget {
             ),
           ),
         ]),
+      ]),
+    );
+  }
+}
+
+
+/// Partners earn on orders they help close in the app — digital adds to them.
+class _EarningsCard extends StatelessWidget {
+  final List<Map<String, Object?>> assisted;
+  const _EarningsCard({required this.assisted});
+  @override
+  Widget build(BuildContext context) {
+    final monthly = assisted.fold<int>(0, (s, r) => s + (r['monthly'] as int));
+    // Demo commission: 8% of each assisted customer's monthly bill for 12 months.
+    final commission = (monthly * 0.08 * 12).round();
+    return InkPanel(
+      child: Row(children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('YOUR EKKO EARNINGS', style: T.label.copyWith(color: Colors.white60)),
+            const Gap(6),
+            Text(rupees(commission), style: T.money.copyWith(fontSize: 32)),
+            const Gap(4),
+            Text('${assisted.length} assisted order${assisted.length == 1 ? '' : 's'} · 8% of bill for 12 months',
+                style: T.small.copyWith(color: Colors.white60)),
+          ]),
+        ),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.handshake_rounded, color: Colors.white, size: 30),
+        ),
       ]),
     );
   }

@@ -9,6 +9,7 @@ import '../services/repository.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'self_test.dart';
 
 final _fmt = DateFormat('d MMM yyyy, h:mm a');
 
@@ -21,7 +22,7 @@ class AccountScreen extends StatelessWidget {
     final u = app.user!;
     return Scaffold(
       appBar: AppBar(title: Text(context.t('account_title'))),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
+      body: ListView(padding: const EdgeInsets.fromLTRB(Sp.xl, 0, Sp.xl, Sp.xxl), children: [
         Card(
           child: ListTile(
             leading: CircleAvatar(
@@ -67,6 +68,14 @@ class AccountScreen extends StatelessWidget {
                   Navigator.of(context).push(MaterialPageRoute(builder: (_) => _ExportScreen(json: json)));
                 }
               },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.fact_check_outlined),
+              title: const Text('Rules self-test'),
+              subtitle: const Text('Run the advisor edge cases live'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SelfTestScreen())),
             ),
             const Divider(),
             ListTile(

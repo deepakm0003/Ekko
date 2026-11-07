@@ -179,8 +179,22 @@ class _KycScreenState extends State<KycScreen> {
     final rec = g == null ? null : a.data.registry.gstin(g);
     return Scaffold(
       appBar: AppBar(title: Text(context.t('kyc_title'))),
-      body: ListView(padding: const EdgeInsets.fromLTRB(16, 4, 16, 24), children: [
-        Text(context.t('kyc_sub'), style: const TextStyle(color: EkkoColors.inkSoft, height: 1.4)),
+      body: ListView(padding: const EdgeInsets.fromLTRB(Sp.xl, 0, Sp.xl, Sp.xxl), children: [
+        Text(context.t('kyc_sub'), style: T.bodySoft),
+        const Gap(Sp.md),
+        EkkoCard(
+          child: Row(children: [
+            ScoreRing(score: (_docs.length * 25).clamp(0, 100), size: 64, caption: '%'),
+            const Gap(Sp.lg),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('${_docs.length} of 4 documents read', style: T.h3),
+                const Gap(2),
+                const Text('On-device OCR · photos deleted right after reading · screenshots blocked', style: T.small),
+              ]),
+            ),
+          ]),
+        ),
         if (rec != null) ...[
           const SizedBox(height: 12),
           Card(
