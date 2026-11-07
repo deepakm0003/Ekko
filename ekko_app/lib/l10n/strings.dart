@@ -153,7 +153,7 @@ class S {
     'qty': 'Qty',
     'why_this': 'Why this?',
     'cant_offer': 'What I couldn\'t include',
-    'continue_kyc': 'Looks good — continue',
+    'continue_kyc': 'Continue',
     'talk_human': 'Talk to an expert instead',
     'callback_requested': 'Done! An Accel partner will call you within 2 working hours.',
     'block_tier': '{product} isn\'t sold in your city yet.',
@@ -386,7 +386,7 @@ class S {
     'qty': 'संख्या',
     'why_this': 'क्यों?',
     'cant_offer': 'जो मैं शामिल नहीं कर सका',
-    'continue_kyc': 'ठीक है — आगे बढ़ें',
+    'continue_kyc': 'आगे बढ़ें',
     'talk_human': 'किसी एक्सपर्ट से बात करें',
     'callback_requested': 'हो गया! Accel पार्टनर 2 कामकाजी घंटों में कॉल करेंगे.',
     'block_tier': '{product} अभी आपके शहर में उपलब्ध नहीं है.',
@@ -510,7 +510,7 @@ class S {
     'need_website': 'வணிக இணையதளம்',
     'rec_title': 'உங்கள் Ekko திட்டம்',
     'monthly_total': 'மாதம்',
-    'continue_kyc': 'சரி — தொடரவும்',
+    'continue_kyc': 'தொடரவும்',
     'mobile_only': 'மொபைல் திட்டம் மட்டும்',
   };
 
@@ -550,7 +550,7 @@ class S {
     'need_website': 'व्यवसायाची वेबसाइट',
     'rec_title': 'तुमचा Ekko प्लॅन',
     'monthly_total': 'मासिक',
-    'continue_kyc': 'ठीक आहे — पुढे जा',
+    'continue_kyc': 'पुढे जा',
     'mobile_only': 'फक्त मोबाइल प्लॅन',
   };
 }
