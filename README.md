@@ -67,6 +67,12 @@ Full analysis: [`RESEARCH_Udyam_Digital.md`](RESEARCH_Udyam_Digital.md) · build
 
 ---
 
+## Prototype scope — what's real and what's simulated
+
+| Real (runs on the phone) | Simulated in this prototype | Production path |
+|---|---|---|
+| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker lookups use the case's mock registries · OTP shown on screen · UPI payment simulated · AI backend built but not deployed (advisor runs offline) | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, hosted AI backend (`ekko_backend/`) |
+
 ## Security & privacy (DPDP Act 2023)
 
 - **Data minimisation:** document photos are read on the phone and deleted immediately; only verified results are stored; GSTIN/Udyam/ID numbers are masked in UI and logs; the phone number is stored only as a salted hash.
