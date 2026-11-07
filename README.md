@@ -2,6 +2,10 @@
 
 **Team Code Sync · Airtel Sync 2026 (Digital Track) · Case: Project Udyam Digital**
 
+**Team Code Sync — Deepak Meena · Sourabh Yadav (IIIT Delhi)**
+
+> **Try it:** download the APK from [Releases](https://github.com/deepakm0003/Ekko/releases/latest) (`Ekko-v1.1-arm64.apk` for most phones, `armv7` for older ones), allow "install unknown apps", log in with any 10-digit number (the OTP is shown on screen) and tap **Start**. In Smart KYC, use **Demo: load a specimen applicant**.
+
 Ekko is an Android app that lets a small-business owner discover the right connectivity bundle, see one clear monthly price, finish KYC from their phone and track activation — in their own language, in one sitting, with no salesperson needed.
 
 > The case uses a fictional operator (Accel Telecom / Accel Business) and synthetic data. Ekko uses its own brand and logo.
