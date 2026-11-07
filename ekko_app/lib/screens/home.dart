@@ -6,6 +6,7 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'advisor.dart';
+import 'self_test.dart';
 import 'tracker.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -43,20 +44,55 @@ class _HomeScreenState extends State<HomeScreen> {
       child: RefreshIndicator(
         color: EkkoColors.red,
         onRefresh: () async => setState(_reload),
-        child: ListView(padding: const EdgeInsets.fromLTRB(16, 16, 16, 24), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(Sp.xl, Sp.md, Sp.xl, Sp.xxl), children: [
+          const Row(children: [EkkoLogo(size: 32), Spacer(), ModeBadge()]),
+          const Gap(Sp.xxl),
+          Text('${context.t('hello')} 👋', style: T.display),
+          const Gap(Sp.xs),
+          Text('Let\'s get your business connected.', style: T.bodySoft),
+          const Gap(Sp.xl),
+          HeroPanel(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(14)),
+                  child: const Icon(Icons.support_agent_rounded, color: Colors.white, size: 26),
+                ),
+                const Spacer(),
+                Pill('हिं · தமிழ் · मराठी', color: Colors.white, bg: Colors.white.withValues(alpha: 0.18)),
+              ]),
+              const Gap(Sp.lg),
+              Text(context.t('start_advisor_t'), style: T.h1.copyWith(color: Colors.white)),
+              const Gap(6),
+              Text(context.t('start_advisor_b'), style: T.body.copyWith(color: Colors.white.withValues(alpha: 0.85))),
+              const Gap(Sp.xl),
+              SizedBox(
+                height: 50,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: EkkoColors.red,
+                    minimumSize: const Size(170, 50),
+                  ),
+                  onPressed: _startAdvisor,
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text(context.t('start')),
+                    const Gap(Sp.sm),
+                    const Icon(Icons.arrow_forward_rounded, size: 18),
+                  ]),
+                ),
+              ),
+            ]),
+          ),
+          const Gap(Sp.xl),
           Row(children: [
-            const EkkoLogo(size: 32),
-            const Spacer(),
-            const ModeBadge(),
+            Expanded(child: _Stat(icon: Icons.bolt_rounded, value: '10 min', label: 'to order')),
+            const Gap(Sp.md),
+            Expanded(child: _Stat(icon: Icons.receipt_long_rounded, value: '1 bill', label: 'all services')),
+            const Gap(Sp.md),
+            Expanded(child: _Stat(icon: Icons.phone_disabled_rounded, value: '0 calls', label: 'live tracking')),
           ]),
-          const SizedBox(height: 24),
-          Text(context.t('hello'), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 16),
-          _AdvisorCard(onStart: _startAdvisor),
-          const SizedBox(height: 16),
-          TrustRow(Icons.rule, context.t('trust_1')),
-          TrustRow(Icons.enhanced_encryption_outlined, context.t('trust_2')),
-          TrustRow(Icons.track_changes, context.t('trust_3')),
           SectionTitle(context.t('my_orders')),
           FutureBuilder<List<Order>>(
             future: _orders,
@@ -65,52 +101,59 @@ class _HomeScreenState extends State<HomeScreen> {
               if (snap.connectionState != ConnectionState.done) {
                 return const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()));
               }
-              if (list.isEmpty) return InfoBanner(context.t('no_orders'), icon: Icons.inbox_outlined);
+              if (list.isEmpty) {
+                return EkkoCard(
+                  child: Row(children: [
+                    const IconBadge(Icons.inventory_2_rounded, color: EkkoColors.muted, bg: EkkoColors.canvas),
+                    const Gap(Sp.md),
+                    Expanded(child: Text(context.t('no_orders'), style: T.bodySoft)),
+                  ]),
+                );
+              }
               return Column(children: [
                 for (final o in list.take(3))
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: OrderCard(order: o, onChanged: () => setState(_reload)),
-                  ),
+                  Padding(padding: const EdgeInsets.only(bottom: Sp.md), child: OrderCard(order: o, onChanged: () => setState(_reload))),
               ]);
             },
           ),
+          const SectionTitle('Why you can trust Ekko'),
+          EkkoCard(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SelfTestScreen())),
+            child: Row(children: [
+              const IconBadge(Icons.fact_check_rounded, color: EkkoColors.green, bg: EkkoColors.greenSoft, size: 46),
+              const Gap(Sp.md),
+              const Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Never sells the wrong plan', style: T.h3),
+                  Gap(2),
+                  Text('Every plan is checked against all catalogue rules. Tap to run the live self-test.', style: T.small),
+                ]),
+              ),
+              const Icon(Icons.chevron_right_rounded, color: EkkoColors.muted),
+            ]),
+          ),
+          const Gap(Sp.md),
+          TrustRow(Icons.enhanced_encryption_rounded, context.t('trust_2')),
+          TrustRow(Icons.track_changes_rounded, context.t('trust_3')),
         ]),
       ),
     );
   }
 }
 
-class _AdvisorCard extends StatelessWidget {
-  final VoidCallback onStart;
-  const _AdvisorCard({required this.onStart});
+class _Stat extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  const _Stat({required this.icon, required this.value, required this.label});
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [EkkoColors.red, EkkoColors.redDark]),
-          borderRadius: BorderRadius.circular(20),
-        ),
+  Widget build(BuildContext context) => EkkoCard(
+        padding: const EdgeInsets.symmetric(horizontal: Sp.md, vertical: Sp.lg),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Icon(Icons.support_agent, color: Colors.white, size: 32),
-          const SizedBox(height: 12),
-          Text(context.t('start_advisor_t'),
-              style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w800, height: 1.2)),
-          const SizedBox(height: 6),
-          Text(context.t('start_advisor_b'), style: const TextStyle(color: Colors.white70, fontSize: 14)),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 46,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: EkkoColors.red,
-                minimumSize: const Size(140, 46),
-              ),
-              onPressed: onStart,
-              child: Text(context.t('start')),
-            ),
-          ),
+          Icon(icon, color: EkkoColors.red, size: 22),
+          const Gap(Sp.sm),
+          Text(value, style: T.h3.copyWith(fontSize: 15.5)),
+          Text(label, style: T.small.copyWith(fontSize: 11.5)),
         ]),
       );
 }

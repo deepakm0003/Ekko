@@ -15,49 +15,87 @@ class OnboardingScreen extends StatelessWidget {
     final app = context.watch<AppState>();
     return Scaffold(
       body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 20), children: [
-          const EkkoLogo(size: 44),
-          const SizedBox(height: 28),
-          Text(context.t('intro_t'),
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, height: 1.15, letterSpacing: -0.5)),
-          const SizedBox(height: 18),
-          TrustRow(Icons.chat_bubble_outline, context.t('intro_1')),
-          TrustRow(Icons.currency_rupee, context.t('intro_2')),
-          TrustRow(Icons.verified_user_outlined, context.t('intro_3')),
-          const SizedBox(height: 28),
-          Text(context.t('choose_language'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-          const SizedBox(height: 12),
+        child: ListView(padding: const EdgeInsets.fromLTRB(Sp.xl, Sp.lg, Sp.xl, Sp.xl), children: [
+          HeroPanel(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const EkkoLogo(size: 38, inverted: true, nameColor: Colors.white),
+              const Gap(Sp.xxl),
+              Text(context.t('intro_t'), style: T.display.copyWith(color: Colors.white, fontSize: 28)),
+              const Gap(Sp.md),
+              Text(context.t('tagline'), style: T.body.copyWith(color: Colors.white.withValues(alpha: 0.85))),
+              const Gap(Sp.xl),
+              const _FlowStrip(),
+            ]),
+          ),
+          const Gap(Sp.xl),
+          TrustRow(Icons.forum_rounded, context.t('intro_1')),
+          TrustRow(Icons.currency_rupee_rounded, context.t('intro_2')),
+          TrustRow(Icons.verified_user_rounded, context.t('intro_3')),
+          const Gap(Sp.xl),
+          Text(context.t('choose_language'), style: T.h3),
+          const Gap(Sp.md),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.6,
+            mainAxisSpacing: Sp.md,
+            crossAxisSpacing: Sp.md,
+            childAspectRatio: 2.7,
             children: [
               for (final e in S.languages.entries)
-                _LangTile(
-                  label: e.value,
-                  selected: app.lang == e.key,
-                  onTap: () => app.setLanguage(e.key),
-                ),
+                _LangTile(label: e.value, selected: app.lang == e.key, onTap: () => app.setLanguage(e.key)),
             ],
           ),
-          const SizedBox(height: 28),
+          const Gap(Sp.xxl),
           FilledButton(
             onPressed: () async {
               await app.setLanguage(app.lang);
               onDone();
             },
-            child: Text(context.t('get_started')),
-          ),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(context.t('tagline'), style: const TextStyle(color: EkkoColors.inkSoft, fontSize: 13)),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Text(context.t('get_started')),
+              const Gap(Sp.sm),
+              const Icon(Icons.arrow_forward_rounded, size: 20),
+            ]),
           ),
         ]),
       ),
     );
+  }
+}
+
+/// Advise → Price → KYC → Live, as a compact visual strip.
+class _FlowStrip extends StatelessWidget {
+  const _FlowStrip();
+  @override
+  Widget build(BuildContext context) {
+    const steps = [
+      (Icons.chat_bubble_rounded, 'Advise'),
+      (Icons.receipt_long_rounded, 'Price'),
+      (Icons.badge_rounded, 'KYC'),
+      (Icons.rocket_launch_rounded, 'Live'),
+    ];
+    return Row(children: [
+      for (var i = 0; i < steps.length; i++) ...[
+        Expanded(
+          child: Column(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.18), borderRadius: BorderRadius.circular(14)),
+              child: Icon(steps[i].$1, color: Colors.white, size: 22),
+            ),
+            const Gap(6),
+            Text(steps[i].$2, style: T.label.copyWith(color: Colors.white, letterSpacing: 0.2)),
+          ]),
+        ),
+        if (i < steps.length - 1)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 18),
+            child: Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.6), size: 18),
+          ),
+      ],
+    ]);
   }
 }
 
@@ -67,19 +105,23 @@ class _LangTile extends StatelessWidget {
   final VoidCallback onTap;
   const _LangTile({required this.label, required this.selected, required this.onTap});
   @override
-  Widget build(BuildContext context) => Material(
-        color: selected ? EkkoColors.redSoft : Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: BorderSide(color: selected ? EkkoColors.red : EkkoColors.line, width: selected ? 1.8 : 1.2),
+  Widget build(BuildContext context) => AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: selected ? EkkoColors.redSoft : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: selected ? EkkoColors.red : EkkoColors.line, width: selected ? 2 : 1.4),
+          boxShadow: selected ? null : EkkoShadow.soft,
         ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: onTap,
-          child: Center(
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w700, color: selected ? EkkoColors.red : EkkoColors.ink)),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              if (selected) ...[const Icon(Icons.check_circle_rounded, color: EkkoColors.red, size: 18), const Gap(6)],
+              Text(label, style: T.h3.copyWith(fontSize: 17, color: selected ? EkkoColors.red : EkkoColors.ink)),
+            ]),
           ),
         ),
       );

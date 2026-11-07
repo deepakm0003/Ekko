@@ -87,28 +87,37 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 20), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(Sp.xl, Sp.xxl, Sp.xl, Sp.xl), children: [
           const EkkoLogo(size: 40),
-          const SizedBox(height: 32),
-          Text(_partner ? context.t('partner_login') : context.t('login_title'),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, height: 1.2)),
-          const SizedBox(height: 20),
+          const Gap(Sp.xxxl + 8),
+          IconBadge(_partner ? Icons.storefront_rounded : Icons.phone_iphone_rounded, size: 52),
+          const Gap(Sp.lg),
+          Text(_partner ? context.t('partner_login') : context.t('login_title'), style: T.h1),
+          const Gap(Sp.sm),
+          Text(_partner ? 'See leads to call, ranked by our model.' : context.t('login_note'), style: T.bodySoft),
+          const Gap(Sp.xxl),
           if (!_partner) ..._ownerForm(context) else ..._partnerForm(context),
           if (_error != null) ...[
-            const SizedBox(height: 12),
-            InfoBanner(_error!, icon: Icons.error_outline, color: EkkoColors.redDark, bg: EkkoColors.redSoft),
+            const Gap(Sp.md),
+            InfoBanner(_error!, icon: Icons.error_outline_rounded, color: EkkoColors.redDark, bg: EkkoColors.redSoft),
           ],
-          const SizedBox(height: 24),
-          TextButton(
-            onPressed: () => setState(() {
-              _partner = !_partner;
-              _error = null;
-            }),
-            child: Text(_partner ? context.t('owner_login') : context.t('partner_login'),
-                style: const TextStyle(color: EkkoColors.red, fontWeight: FontWeight.w700)),
+          const Gap(Sp.xl),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => setState(() {
+                _partner = !_partner;
+                _error = null;
+              }),
+              icon: Icon(_partner ? Icons.person_rounded : Icons.storefront_rounded, size: 18),
+              label: Text(_partner ? context.t('owner_login') : context.t('partner_login')),
+            ),
           ),
-          const SizedBox(height: 8),
-          InfoBanner(context.t('login_note'), icon: Icons.lock_outline),
+          const Gap(Sp.xl),
+          const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.lock_rounded, size: 14, color: EkkoColors.muted),
+            Gap(6),
+            Text('Encrypted on your phone · DPDP-compliant', style: T.small),
+          ]),
         ]),
       ),
     );
@@ -119,26 +128,34 @@ class _LoginScreenState extends State<LoginScreen> {
           controller: _phone,
           enabled: _demoOtp == null,
           keyboardType: TextInputType.phone,
+          style: T.h3.copyWith(fontSize: 18, letterSpacing: 1),
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(10)],
-          decoration: InputDecoration(labelText: context.t('phone_label'), prefixText: '+91  '),
+          decoration: InputDecoration(
+            labelText: context.t('phone_label'),
+            prefixIcon: const Padding(
+              padding: EdgeInsets.only(left: 18, right: 8),
+              child: Text('🇮🇳  +91', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+          ),
         ),
-        const SizedBox(height: 14),
+        const Gap(Sp.lg),
         if (_demoOtp == null)
           FilledButton(onPressed: _busy ? null : _sendOtp, child: Text(context.t('send_otp')))
         else ...[
-          InfoBanner(context.t('otp_demo', {'otp': _demoOtp}),
-              icon: Icons.sms_outlined, color: EkkoColors.green, bg: EkkoColors.greenSoft),
-          const SizedBox(height: 14),
+          InfoBanner(context.t('otp_demo', {'otp': _demoOtp}), icon: Icons.sms_rounded, color: EkkoColors.green, bg: EkkoColors.greenSoft),
+          const Gap(Sp.lg),
           TextField(
             controller: _otp,
             keyboardType: TextInputType.number,
             autofocus: true,
+            textAlign: TextAlign.center,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-            style: const TextStyle(fontSize: 22, letterSpacing: 8, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontFamily: 'Jakarta', fontSize: 26, letterSpacing: 14, fontWeight: FontWeight.w800),
             decoration: InputDecoration(labelText: context.t('otp_label')),
             onSubmitted: (_) => _verify(),
           ),
-          const SizedBox(height: 14),
+          const Gap(Sp.lg),
           FilledButton(onPressed: _busy ? null : _verify, child: Text(context.t('verify'))),
         ],
       ];
@@ -147,18 +164,18 @@ class _LoginScreenState extends State<LoginScreen> {
         TextField(
           controller: _pid,
           textCapitalization: TextCapitalization.characters,
-          decoration: InputDecoration(labelText: context.t('partner_id')),
+          decoration: InputDecoration(labelText: context.t('partner_id'), prefixIcon: const Icon(Icons.badge_rounded)),
         ),
-        const SizedBox(height: 12),
+        const Gap(Sp.md),
         TextField(
           controller: _pin,
           obscureText: true,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
-          decoration: InputDecoration(labelText: context.t('partner_pin')),
+          decoration: InputDecoration(labelText: context.t('partner_pin'), prefixIcon: const Icon(Icons.password_rounded)),
           onSubmitted: (_) => _partnerLogin(),
         ),
-        const SizedBox(height: 14),
+        const Gap(Sp.lg),
         FilledButton(onPressed: _busy ? null : _partnerLogin, child: Text(context.t('continue'))),
       ];
 }
