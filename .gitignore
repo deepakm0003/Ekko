@@ -35,3 +35,7 @@ Thumbs.db
 demo_video/
 release/
 submission/
+
+# Backend local database
+ekko_backend/*.db
+.pytest_cache/
