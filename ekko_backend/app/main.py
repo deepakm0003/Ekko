@@ -20,7 +20,7 @@ DESCRIPTION = """
 **Ekko backend** — the server half of Ekko (Team Code Sync, Airtel Sync 2026).
 
 * **Never trust the client:** orders are re-validated against every catalogue rule and re-priced here.
-* **AI is optional:** the advisor understands answers with deterministic rules; Claude is used only as a fallback.
+* **AI is optional:** the advisor understands answers with deterministic rules; an LLM (Groq) is used only as a fallback.
 * **Privacy by design (DPDP Act 2023):** masked identifiers, consent log, export and erasure endpoints, audit trail.
 """
 
@@ -66,7 +66,7 @@ def create_app() -> FastAPI:
         s = services()
         gst, udyam = s.registry.counts
         return {"ok": True, "database": "up", "products": len(s.catalogue.by_id), "gstinRecords": gst,
-                "udyamRecords": udyam, "modelAuc": s.propensity.auc, "ai": "claude" if settings.ai_enabled else "rules-only"}
+                "udyamRecords": udyam, "modelAuc": s.propensity.auc, "ai": settings.ai_provider if settings.ai_provider != "none" else "rules-only"}
 
     for r in (auth.router, plans.router, orders.router, people.router):
         app.include_router(r)

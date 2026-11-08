@@ -7,6 +7,7 @@ os.environ["EKKO_DATABASE_URL"] = f"sqlite:///{_tmp}/test.db"
 os.environ["EKKO_RATE_PER_MIN"] = "10000"
 os.environ["EKKO_STAGE_SECONDS"] = "3600,7200,10800"
 os.environ.pop("ANTHROPIC_API_KEY", None)
+os.environ.pop("GROQ_API_KEY", None)
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

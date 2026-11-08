@@ -28,9 +28,11 @@ class Settings:
     # Demo partner (matches the app's demo seed). PIN stored only as a salted PBKDF2 hash.
     partner_id: str = os.environ.get("EKKO_PARTNER_ID", "PTR-1001")
     partner_pin: str = os.environ.get("EKKO_PARTNER_PIN", "482916")
-    # Optional AI: without a key the advisor uses the on-server rule parser.
+    # Optional AI: without a key the advisor uses the on-server rule parser. Groq is preferred when set.
+    groq_model: str = os.environ.get("EKKO_GROQ_MODEL", "llama-3.3-70b-versatile")
     anthropic_model: str = os.environ.get("EKKO_MODEL", "claude-opus-5-5")
-    ai_enabled: bool = bool(os.environ.get("ANTHROPIC_API_KEY"))
+    ai_provider: str = ("groq" if os.environ.get("GROQ_API_KEY")
+                        else "anthropic" if os.environ.get("ANTHROPIC_API_KEY") else "none")
     # Order tracker: seconds after ordering when it reaches scheduled, install, active (demo speed by default).
     stage_seconds: tuple = field(default_factory=lambda: tuple(
         int(x) for x in os.environ.get("EKKO_STAGE_SECONDS", "60,180,300").split(",")))

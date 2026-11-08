@@ -98,7 +98,8 @@ def ask(body: AskIn, request: Request):
     if pid:
         p = services().catalogue[pid]
         return {"text": f"{p.name}: {p.description}. Exact prices are on your plan screen.", "source": "catalogue"}
-    return {"text": None, "source": "none"}
+    text = ai.ask(body.language, body.question)
+    return {"text": text, "source": "ai" if text else "none"}
 
 
 def _bundle_response(bundle, quote, profile) -> dict:
