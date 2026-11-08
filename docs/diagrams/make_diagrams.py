@@ -142,7 +142,7 @@ def architecture():
     s.rect(RX + 22, 178, 396, 316, WHITE, BLUE, 14, 2, shadow=True)
     s.text(RX + 42, 210, "Ekko API (backend)", 18, 800, BLUE)
     s.text(RX + 42, 234, "FastAPI · SQLAlchemy · JWT · Docker", 14, 600, INK2)
-    s.lines(RX + 42, 262, ["26 endpoints · OpenAPI docs · 54 tests",
+    s.lines(RX + 42, 262, ["27 endpoints · OpenAPI docs · 55 tests",
                            "auth: OTP (hashed, lock-out) · partner role",
                            "re-runs rules & re-prices every order",
                            "server-side KYC re-check (12 checks)",
