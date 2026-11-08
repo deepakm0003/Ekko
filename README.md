@@ -10,7 +10,7 @@ Airtel Sync 2026 · Digital Track · Case: *Project Udyam Digital*
 
 [▶ **Watch the demo**](https://youtube.com/shorts/4LlFCjojVFk) · [⬇ **Download the APK**](https://github.com/deepakm0003/Ekko/releases/latest) · [🏗 Architecture](#architecture) · [📊 Research](RESEARCH_Udyam_Digital.md)
 
-![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20passing-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
+![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-26%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2050%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
 
 </div>
 
@@ -76,24 +76,29 @@ Full analysis: [`RESEARCH_Udyam_Digital.md`](RESEARCH_Udyam_Digital.md) · build
 
 ![Smart KYC pipeline](docs/diagrams/kyc_pipeline.png)
 
-### AI backend sequence
+### Backend: the server is the source of truth
+
+The phone works fully offline, and the backend makes the same journey trustworthy at scale. **The server never trusts the client:** it re-runs every catalogue rule, re-derives GST status from the registry, re-prices the bundle and re-checks the KYC fields before an order exists. No paid API is needed; Claude is an optional fallback for language only.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant App as Ekko app
-    participant API as FastAPI backend
-    participant C as Claude API
-    App->>API: POST /v1/advisor/understand<br/>X-Ekko-App-Key, {step, text, language}
-    API->>API: verify app key (HMAC compare) · per-IP rate limit · mask GSTIN / numbers in logs
-    API->>C: messages.create (structured JSON schema, effort: low, refusal fallback)
-    alt success
-        C-->>API: profile fields as strict JSON
-        API-->>App: {fields}
-        App->>App: rules engine validates → plan
-    else error / timeout / refusal
-        API-->>App: {fields: null}
-        App->>App: offline chips (no interruption)
+    participant API as Ekko API (FastAPI)
+    participant DB as Postgres / SQLite
+    App->>API: POST /v1/auth/otp/verify
+    API->>DB: OTP hash check · attempts · lock-out
+    API-->>App: JWT (role: owner)
+    App->>API: POST /v1/kyc/verify (OCR fields only, never images)
+    API->>API: GSTIN check digit · registry status · names · 90-day bill · signatory role
+    API->>DB: kyc_report (masked)
+    App->>API: POST /v1/orders {profile, items, kycReportId, expectedMonthly}
+    API->>API: re-derive GST status from registry · validate every rule · re-price
+    alt rule broken or price differs or KYC not approved
+        API-->>App: 422 violations / 409 serverMonthly / 409 KYC
+    else valid
+        API->>DB: order + audit_log
+        API-->>App: 201 order (status, ETA)
     end
 ```
 
@@ -144,16 +149,22 @@ erDiagram
 
 An append-only `audit_log` table records logins, consents, KYC runs, orders and exports (details are masked).
 
-### Backend API
+### Backend API — 26 endpoints ([`ekko_backend/`](ekko_backend))
 
-| Endpoint | Purpose | Guardrails |
+| Area | Endpoints | What the server guarantees |
 |---|---|---|
-| `GET /health` | Liveness | — |
-| `POST /v1/advisor/understand` | Free-text answer (any Indian language, Hinglish, speech typos) → profile fields | JSON schema output, enum-restricted needs, user text treated as data |
-| `POST /v1/advisor/explain` | Explain an **already validated** plan in the owner's language | Cannot add items or change prices |
-| `POST /v1/advisor/ask` | Short product Q&A ("what is a static IP?") | Never quotes prices or eligibility |
+| Ops | `GET /health` · `GET /ready` | readiness checks DB + reference data (25 products, 3,534 GSTIN, 2,723 Udyam, model AUC) |
+| Auth | `POST /v1/auth/otp/request` · `/otp/verify` · `/partner` | OTP stored as PBKDF2 hash, 5-minute expiry, 5-attempt lock-out; JWT with role (owner / partner) |
+| Plans | `GET /v1/catalogue` · `POST /v1/plans/recommend` · `/plans/quote` | Python port of the app's rules engine; every bundle checked, priced server-side |
+| Registry | `GET /v1/registry/gstin/{gstin}` · `/registry/udyam/{n}` | check digit before lookup; identifiers returned masked |
+| Advisor | `POST /v1/advisor/understand` · `/explain` · `/ask` | multilingual rule parser (Hindi, Hinglish, Devanagari digits) first; Claude only as fallback; never sets prices |
+| KYC | `POST /v1/kyc/verify` | re-runs all 12 checks on OCR fields so a modified app can't fake a pass |
+| Orders | `POST/GET /v1/orders` · `GET /v1/orders/{id}` · `POST /v1/orders/{id}/slot` | rejects ineligible bundles (422), price tampering (409), unapproved KYC (409); other users' orders return 404 |
+| Partner | `POST /v1/leads` · `GET /v1/partner/leads` · `/partner/earnings` | leads ranked by the propensity model; partner-only (403 for owners); commission from partner codes |
+| DPDP | `GET/POST /v1/me/consents` · `GET /v1/me/export` · `DELETE /v1/me` · `GET /v1/me/audit` | consent log with notice version, full export, erasure, personal security log |
 
-All endpoints require `X-Ekko-App-Key`, are rate-limited per IP, log masked text only, and return `null` on any upstream failure. Verified locally: `/health` OK, missing key → 401, invalid input → 422, upstream failure → graceful `null`.
+**Hardening:** strict schemas (unknown fields rejected), per-IP rate limiting, request IDs, security headers (HSTS, nosniff, no-store), masked logs, non-root Docker image with health check, Postgres-ready via SQLAlchemy.
+**Verified:** 50 automated tests (`pytest`) cover the 13 advisor edge cases, a 1,792-profile rule sweep, all 12 KYC specimens, OTP lock-out, role checks, tampering attacks and DPDP erasure. Interactive docs at `/docs`.
 
 ### Tech stack
 
@@ -163,7 +174,7 @@ All endpoints require `X-Ekko-App-Key`, are rate-limited per IP, log masked text
 | On-device ML | Google ML Kit text recognition; logistic-regression propensity model (scikit-learn → JSON weights) |
 | Storage & security | `sqflite_sqlcipher`, `flutter_secure_storage` (Android Keystore), `local_auth`, `FLAG_SECURE` |
 | Voice | `speech_to_text` (en-IN, hi-IN, ta-IN, mr-IN) |
-| Backend | FastAPI, Anthropic SDK (Claude, structured outputs), Docker, Render blueprint |
+| Backend | FastAPI, SQLAlchemy 2 (Postgres / SQLite), PyJWT, pytest, Docker, Render blueprint, GitHub Actions CI; Anthropic SDK optional |
 | Data pipeline | pandas, scikit-learn (`ekko_app/tool/build_assets.py`) |
 
 ---
@@ -213,7 +224,7 @@ All endpoints require `X-Ekko-App-Key`, are rate-limited per IP, log masked text
 
 | Real (runs on the phone) | Simulated in this prototype | Production path |
 |---|---|---|
-| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker use the case's mock registries · OTP shown on screen · UPI simulated · AI backend built but not deployed (advisor runs offline) | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, hosted AI backend (`ekko_backend/`) |
+| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker use the case's mock registries · OTP shown on screen · UPI simulated · backend built and tested (50 tests) but not yet hosted; the app runs offline | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, hosted `ekko_backend/` (one-click Render blueprint) |
 
 ## Security & privacy (DPDP Act 2023)
 
@@ -242,7 +253,11 @@ ekko_app/                Flutter app (Android)
   lib/screens/             onboarding, login, advisor, plan, consent, KYC, checkout, tracker, partner, insights, account, self-test
   tool/build_assets.py     builds app data (catalogue, registries, model, insights) from the case CSVs
   test/                    46 unit tests (advisor scenarios, pricing, 12 KYC applicants, OCR repair, self-test sweep)
-ekko_backend/            FastAPI + Claude service (understand / explain / ask), Dockerfile, render.yaml
+ekko_backend/            FastAPI service: auth, plans, KYC, orders, partner, DPDP (26 endpoints)
+  app/domain/              Python port of the rules engine, pricing, KYC validator, parser, propensity model
+  app/routers/             auth · plans · orders · people (partner & privacy)
+  tests/                   50 pytest tests
+.github/workflows/ci.yml backend tests + Docker build + Flutter analyze/test on every push
 docs/diagrams/           architecture diagrams (SVG/PNG) + generator
 ```
 
@@ -261,10 +276,12 @@ flutter build apk --release --split-per-abi --dart-define=EKKO_API=https://<your
 **Backend** (optional — the app works fully offline without it)
 ```bash
 cd ekko_backend
-pip install -r requirements.txt
-ANTHROPIC_API_KEY=... EKKO_APP_KEY=... uvicorn app:app --port 8000
+pip install -r requirements-dev.txt
+python -m pytest                       # 50 tests
+uvicorn app.main:app --port 8000       # docs at http://localhost:8000/docs
+# or: docker build -t ekko-api . && docker run -p 8000:8000 ekko-api
 ```
-Deploys to Render via `render.yaml`.
+Settings (all optional): `EKKO_DATABASE_URL`, `EKKO_JWT_SECRET`, `EKKO_DEMO_OTP`, `ANTHROPIC_API_KEY`. Deploys to Render (API + Postgres) via `render.yaml`.
 
 **Rebuild data assets / diagrams**
 ```bash

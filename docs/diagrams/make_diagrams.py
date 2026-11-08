@@ -139,23 +139,33 @@ def architecture():
     RX = 1530
     s.rect(RX, 120, 440, 820, CANVAS, LINE, 20)
     s.text(RX + 22, 156, "CLOUD & INTEGRATIONS", 14, 800, RED)
-    s.rect(RX + 22, 178, 396, 236, WHITE, BLUE, 14, 2, shadow=True)
-    s.text(RX + 42, 210, "Ekko AI backend", 18, 800, BLUE)
-    s.text(RX + 42, 234, "FastAPI · Python · Docker · Render", 14, 600, INK2)
-    s.lines(RX + 42, 262, ["POST /v1/advisor/understand", "POST /v1/advisor/explain", "POST /v1/advisor/ask",
-                           "app key · per-IP rate limit · masked logs", "prompt-injection guard · fail-soft",
-                           "receives free text & plan summary only —", "never documents or identifiers"], 14)
-    s.arrow(RX + 220, 418, RX + 220, 462, BLUE, label="HTTPS", lx=RX + 262, ly=446)
-    s.rect(RX + 22, 466, 396, 120, WHITE, BLUE, 14, 1.6, shadow=True)
-    s.text(RX + 42, 498, "Claude API", 18, 800, BLUE)
-    s.lines(RX + 42, 524, ["structured JSON outputs", "server-side refusal fallback", "key stays on the server"], 14)
+    s.rect(RX + 22, 178, 396, 316, WHITE, BLUE, 14, 2, shadow=True)
+    s.text(RX + 42, 210, "Ekko API (backend)", 18, 800, BLUE)
+    s.text(RX + 42, 234, "FastAPI · SQLAlchemy · JWT · Docker", 14, 600, INK2)
+    s.lines(RX + 42, 262, ["26 endpoints · OpenAPI docs · 50 tests",
+                           "auth: OTP (hashed, lock-out) · partner role",
+                           "re-runs rules & re-prices every order",
+                           "server-side KYC re-check (12 checks)",
+                           "orders · live tracking · slot booking",
+                           "partner leads (ranked) · earnings",
+                           "DPDP: consent · export · erase · audit",
+                           "advisor: rule parser, AI only fallback",
+                           "rate limits · security headers · masked logs"], 14, lh=1.42)
+    s.arrow(RX + 140, 498, RX + 140, 528, BLUE)
+    s.arrow(RX + 300, 498, RX + 300, 528, BLUE)
+    s.rect(RX + 22, 532, 190, 74, WHITE, BLUE, 12, 1.6, shadow=True)
+    s.text(RX + 36, 560, "Postgres / SQLite", 15, 800, BLUE)
+    s.text(RX + 36, 584, "users · orders · audit", 12.5, 500, INK2)
+    s.rect(RX + 228, 532, 190, 74, WHITE, BLUE, 12, 1.6, dash="6 4")
+    s.text(RX + 242, 560, "Claude (optional)", 15, 800, BLUE)
+    s.text(RX + 242, 584, "language only, fail-soft", 12.5, 500, INK2)
 
-    s.text(RX + 22, 628, "Production integrations", 15, 800, INK)
+    s.text(RX + 22, 636, "Production integrations", 15, 800, INK)
     for i, (t, sub) in enumerate([("GSTN / Udyam via GSP", "replaces mock registries"),
                                   ("DigiLocker / Entity Locker", "consent-based document fetch"),
                                   ("SMS gateway (DLT)", "real OTP + order updates"),
                                   ("Razorpay UPI", "real setup-fee payment")]):
-        y = 646 + i * 70
+        y = 652 + i * 68
         s.rect(RX + 22, y, 396, 58, WHITE, AMBER, 12, 1.6, dash="7 5")
         s.text(RX + 42, y + 25, t, 15, 700, INK)
         s.text(RX + 42, y + 46, sub, 13, 500, MUTED)
