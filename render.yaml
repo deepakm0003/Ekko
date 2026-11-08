@@ -2,6 +2,9 @@ services:
   - type: web
     name: ekko-api
     runtime: docker
+    rootDir: ekko_backend
+    dockerfilePath: ./Dockerfile
+    region: singapore
     plan: free
     healthCheckPath: /ready
     envVars:
@@ -21,3 +24,4 @@ services:
 databases:
   - name: ekko-db
     plan: free
+    region: singapore

@@ -281,7 +281,7 @@ python -m pytest                       # 50 tests
 uvicorn app.main:app --port 8000       # docs at http://localhost:8000/docs
 # or: docker build -t ekko-api . && docker run -p 8000:8000 ekko-api
 ```
-Settings (all optional): `EKKO_DATABASE_URL`, `EKKO_JWT_SECRET`, `EKKO_DEMO_OTP`, `ANTHROPIC_API_KEY`. Deploys to Render (API + Postgres) via `render.yaml`.
+Settings (all optional): `EKKO_DATABASE_URL`, `EKKO_JWT_SECRET`, `EKKO_DEMO_OTP`, `ANTHROPIC_API_KEY`. Deploys to Render (API + Postgres) via the root `render.yaml` blueprint.
 
 **Rebuild data assets / diagrams**
 ```bash
