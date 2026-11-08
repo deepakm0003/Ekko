@@ -35,19 +35,72 @@ def lang_name(code: str) -> str:
     return LANG.get(code, "English")
 
 
-def _groq(system: str, user: str, json_mode: bool, max_tokens: int) -> str | None:
-    body = {"model": settings.groq_model, "temperature": 0, "max_tokens": max_tokens,
+GROQ_MODELS_URL = "https://api.groq.com/openai/v1/models"
+_PREFERRED = ("llama-3.3-70b", "gpt-oss-120b", "llama-4", "gpt-oss-20b", "llama-3.1-8b", "llama")
+_groq_model: str | None = None
+_last_error: str | None = None
+
+
+def _groq_headers() -> dict:
+    return {"Authorization": f"Bearer {os.environ.get('GROQ_API_KEY', '').strip()}"}
+
+
+def _pick_groq_model() -> str | None:
+    """When the configured model is retired, choose the best chat model Groq currently lists."""
+    try:
+        r = httpx.get(GROQ_MODELS_URL, headers=_groq_headers(), timeout=TIMEOUT)
+        r.raise_for_status()
+        ids = [m["id"] for m in r.json().get("data", []) if m.get("active", True)]
+    except Exception as e:
+        log.warning("Groq model list failed: %s", type(e).__name__)
+        return None
+    chat = [i for i in ids if not any(x in i for x in ("whisper", "tts", "guard", "embed", "orpheus"))]
+    for pref in _PREFERRED:
+        hit = next((i for i in chat if pref in i), None)
+        if hit:
+            return hit
+    return chat[0] if chat else None
+
+
+def _groq_post(model: str, system: str, user: str, json_mode: bool, max_tokens: int) -> httpx.Response:
+    body = {"model": model, "temperature": 0, "max_tokens": max_tokens,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
     if json_mode:
         body["response_format"] = {"type": "json_object"}
+    return httpx.post(GROQ_URL, json=body, timeout=TIMEOUT, headers=_groq_headers())
+
+
+def _groq(system: str, user: str, json_mode: bool, max_tokens: int) -> str | None:
+    global _groq_model, _last_error
+    model = _groq_model or settings.groq_model
     try:
-        r = httpx.post(GROQ_URL, json=body, timeout=TIMEOUT,
-                       headers={"Authorization": f"Bearer {os.environ['GROQ_API_KEY']}"})
-        r.raise_for_status()
+        r = _groq_post(model, system, user, json_mode, max_tokens)
+        if r.status_code in (400, 404) and "model" in r.text.lower():
+            fallback = _pick_groq_model()
+            if fallback and fallback != model:
+                log.warning("Groq model %s unavailable; switching to %s", model, fallback)
+                _groq_model = model = fallback
+                r = _groq_post(model, system, user, json_mode, max_tokens)
+        if r.status_code >= 400:
+            # Status and Groq's own message only — never the key or the user's text.
+            _last_error = f"HTTP {r.status_code} {r.text[:200]}".replace("\n", " ")
+            log.warning("Groq call failed: %s", _last_error)
+            return None
+        _last_error = None
         return r.json()["choices"][0]["message"]["content"]
-    except Exception as e:  # rate limit, network, auth, bad payload — fall back to rules
-        log.warning("Groq call failed: %s", type(e).__name__)
+    except Exception as e:  # network, timeout, bad payload — fall back to rules
+        _last_error = type(e).__name__
+        log.warning("Groq call failed: %s", _last_error)
         return None
+
+
+def provider_status() -> dict:
+    """Live check for /ready: is the configured LLM actually answering?"""
+    if settings.ai_provider != "groq":
+        return {"provider": settings.ai_provider}
+    out = _groq("Reply with the single word OK.", "ping", json_mode=False, max_tokens=5)
+    return {"provider": "groq", "model": _groq_model or settings.groq_model, "reachable": out is not None,
+            "keyConfigured": bool(os.environ.get("GROQ_API_KEY", "").strip()), "lastError": _last_error}
 
 
 def _claude(system: str, user: str, json_mode: bool, max_tokens: int) -> str | None:

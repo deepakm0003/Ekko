@@ -9,6 +9,7 @@ from app import ai
 class FakeResponse:
     def __init__(self, payload, status=200):
         self.payload, self.status_code = payload, status
+        self.text = json.dumps(payload)
 
     def raise_for_status(self):
         if self.status_code >= 400:
@@ -60,3 +61,23 @@ def test_advisor_uses_llm_only_when_rules_miss(client, monkeypatch):
     assert r["source"] == "rules" and not calls  # rules handled it; no LLM call
     r = client.post("/v1/advisor/understand", json={"step": "employees", "text": "staff thoda zyada hai, around eighteen"}).json()
     assert r == {"fields": {"employees": 18}, "source": "ai"} and len(calls) == 1
+
+
+def test_retired_model_switches_to_an_available_one(monkeypatch):
+    monkeypatch.setenv("GROQ_API_KEY", " gsk_test \n")
+    monkeypatch.setattr(ai, "_groq_model", None)
+    used, auths = [], []
+
+    def fake_post(url, json, timeout, headers):  # noqa: A002
+        used.append(json["model"])
+        auths.append(headers["Authorization"])
+        if json["model"] == ai.settings.groq_model:
+            return FakeResponse({"error": {"message": "The model has been decommissioned", "code": "model_decommissioned"}}, 400)
+        return FakeResponse({"choices": [{"message": {"content": "OK"}}]})
+
+    monkeypatch.setattr(ai.httpx, "post", fake_post)
+    monkeypatch.setattr(ai.httpx, "get", lambda *a, **k: FakeResponse(
+        {"data": [{"id": "whisper-large-v3"}, {"id": "openai/gpt-oss-120b"}, {"id": "llama-3.1-8b-instant"}]}))
+    assert ai._groq("s", "u", json_mode=False, max_tokens=5) == "OK"
+    assert used == [ai.settings.groq_model, "openai/gpt-oss-120b"] and ai._groq_model == "openai/gpt-oss-120b"
+    assert set(auths) == {"Bearer gsk_test"}  # key whitespace stripped

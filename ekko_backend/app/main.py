@@ -8,9 +8,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from . import ai
 from .config import settings
 from .db import Base, engine
 from .routers import auth, orders, people, plans
+from .security import limiter
 from .services import services
 
 logging.basicConfig(level=logging.INFO, format='{"t":"%(asctime)s","lvl":"%(levelname)s","msg":"%(message)s"}')
@@ -67,6 +69,11 @@ def create_app() -> FastAPI:
         gst, udyam = s.registry.counts
         return {"ok": True, "database": "up", "products": len(s.catalogue.by_id), "gstinRecords": gst,
                 "udyamRecords": udyam, "modelAuc": s.propensity.auc, "ai": settings.ai_provider if settings.ai_provider != "none" else "rules-only"}
+
+    @app.get("/ready/ai", tags=["ops"], summary="Check the optional LLM is reachable (makes one tiny call)")
+    def ready_ai(request: Request):
+        limiter.check(request)
+        return ai.provider_status()
 
     for r in (auth.router, plans.router, orders.router, people.router):
         app.include_router(r)
