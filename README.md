@@ -10,7 +10,7 @@ Airtel Sync 2026 · Digital Track · Case: *Project Udyam Digital*
 
 [▶ **Watch the demo**](https://youtube.com/shorts/4LlFCjojVFk) · [⬇ **Download the APK**](https://github.com/deepakm0003/Ekko/releases/latest) · [🏗 Architecture](#architecture) · [📊 Research](RESEARCH_Udyam_Digital.md)
 
-![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-26%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2050%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
+![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-26%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2054%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
 
 </div>
 
@@ -78,7 +78,7 @@ Full analysis: [`RESEARCH_Udyam_Digital.md`](RESEARCH_Udyam_Digital.md) · build
 
 ### Backend: the server is the source of truth
 
-The phone works fully offline, and the backend makes the same journey trustworthy at scale. **The server never trusts the client:** it re-runs every catalogue rule, re-derives GST status from the registry, re-prices the bundle and re-checks the KYC fields before an order exists. No paid API is needed; Claude is an optional fallback for language only.
+The phone works fully offline, and the backend makes the same journey trustworthy at scale. **The server never trusts the client:** it re-runs every catalogue rule, re-derives GST status from the registry, re-prices the bundle and re-checks the KYC fields before an order exists. No paid API is needed; an LLM (Groq, Llama 3.3 70B) is an optional fallback for language only.
 
 ```mermaid
 sequenceDiagram
@@ -157,14 +157,14 @@ An append-only `audit_log` table records logins, consents, KYC runs, orders and 
 | Auth | `POST /v1/auth/otp/request` · `/otp/verify` · `/partner` | OTP stored as PBKDF2 hash, 5-minute expiry, 5-attempt lock-out; JWT with role (owner / partner) |
 | Plans | `GET /v1/catalogue` · `POST /v1/plans/recommend` · `/plans/quote` | Python port of the app's rules engine; every bundle checked, priced server-side |
 | Registry | `GET /v1/registry/gstin/{gstin}` · `/registry/udyam/{n}` | check digit before lookup; identifiers returned masked |
-| Advisor | `POST /v1/advisor/understand` · `/explain` · `/ask` | multilingual rule parser (Hindi, Hinglish, Devanagari digits) first; Claude only as fallback; never sets prices |
+| Advisor | `POST /v1/advisor/understand` · `/explain` · `/ask` | multilingual rule parser (Hindi, Hinglish, Devanagari digits) first; Groq LLM only as fallback, output whitelisted; never sets prices |
 | KYC | `POST /v1/kyc/verify` | re-runs all 12 checks on OCR fields so a modified app can't fake a pass |
 | Orders | `POST/GET /v1/orders` · `GET /v1/orders/{id}` · `POST /v1/orders/{id}/slot` | rejects ineligible bundles (422), price tampering (409), unapproved KYC (409); other users' orders return 404 |
 | Partner | `POST /v1/leads` · `GET /v1/partner/leads` · `/partner/earnings` | leads ranked by the propensity model; partner-only (403 for owners); commission from partner codes |
 | DPDP | `GET/POST /v1/me/consents` · `GET /v1/me/export` · `DELETE /v1/me` · `GET /v1/me/audit` | consent log with notice version, full export, erasure, personal security log |
 
 **Hardening:** strict schemas (unknown fields rejected), per-IP rate limiting, request IDs, security headers (HSTS, nosniff, no-store), masked logs, non-root Docker image with health check, Postgres-ready via SQLAlchemy.
-**Verified:** 50 automated tests (`pytest`) cover the 13 advisor edge cases, a 1,792-profile rule sweep, all 12 KYC specimens, OTP lock-out, role checks, tampering attacks and DPDP erasure. Interactive docs at `/docs`.
+**Verified:** 54 automated tests (`pytest`) cover the 13 advisor edge cases, a 1,792-profile rule sweep, all 12 KYC specimens, OTP lock-out, role checks, tampering attacks and DPDP erasure. Interactive docs at `/docs`.
 
 ### Tech stack
 
@@ -174,7 +174,7 @@ An append-only `audit_log` table records logins, consents, KYC runs, orders and 
 | On-device ML | Google ML Kit text recognition; logistic-regression propensity model (scikit-learn → JSON weights) |
 | Storage & security | `sqflite_sqlcipher`, `flutter_secure_storage` (Android Keystore), `local_auth`, `FLAG_SECURE` |
 | Voice | `speech_to_text` (en-IN, hi-IN, ta-IN, mr-IN) |
-| Backend | FastAPI, SQLAlchemy 2 (Postgres / SQLite), PyJWT, pytest, Docker, Render blueprint, GitHub Actions CI; Anthropic SDK optional |
+| Backend | FastAPI, SQLAlchemy 2 (Postgres / SQLite), PyJWT, pytest, Docker, Render blueprint, GitHub Actions CI; Groq LLM (OpenAI-compatible API) optional |
 | Data pipeline | pandas, scikit-learn (`ekko_app/tool/build_assets.py`) |
 
 ---
@@ -224,7 +224,7 @@ An append-only `audit_log` table records logins, consents, KYC runs, orders and 
 
 | Real (runs on the phone) | Simulated in this prototype | Production path |
 |---|---|---|
-| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker use the case's mock registries · OTP shown on screen · UPI simulated · backend built and tested (50 tests) but not yet hosted; the app runs offline | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, hosted `ekko_backend/` (one-click Render blueprint) |
+| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker use the case's mock registries · OTP shown on screen · UPI simulated · backend built and tested (54 tests) but not yet hosted; the app runs offline | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, hosted `ekko_backend/` (one-click Render blueprint) |
 
 ## Security & privacy (DPDP Act 2023)
 
@@ -256,7 +256,7 @@ ekko_app/                Flutter app (Android)
 ekko_backend/            FastAPI service: auth, plans, KYC, orders, partner, DPDP (26 endpoints)
   app/domain/              Python port of the rules engine, pricing, KYC validator, parser, propensity model
   app/routers/             auth · plans · orders · people (partner & privacy)
-  tests/                   50 pytest tests
+  tests/                   54 pytest tests
 .github/workflows/ci.yml backend tests + Docker build + Flutter analyze/test on every push
 docs/diagrams/           architecture diagrams (SVG/PNG) + generator
 ```
@@ -277,11 +277,11 @@ flutter build apk --release --split-per-abi --dart-define=EKKO_API=https://<your
 ```bash
 cd ekko_backend
 pip install -r requirements-dev.txt
-python -m pytest                       # 50 tests
+python -m pytest                       # 54 tests
 uvicorn app.main:app --port 8000       # docs at http://localhost:8000/docs
 # or: docker build -t ekko-api . && docker run -p 8000:8000 ekko-api
 ```
-Settings (all optional): `EKKO_DATABASE_URL`, `EKKO_JWT_SECRET`, `EKKO_DEMO_OTP`, `ANTHROPIC_API_KEY`. Deploys to Render (API + Postgres) via the root `render.yaml` blueprint.
+Settings (all optional): `EKKO_DATABASE_URL`, `EKKO_JWT_SECRET`, `EKKO_DEMO_OTP`, `GROQ_API_KEY` (or `ANTHROPIC_API_KEY`). Deploys to Render (API + Postgres) via the root `render.yaml` blueprint.
 
 **Rebuild data assets / diagrams**
 ```bash

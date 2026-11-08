@@ -18,7 +18,7 @@ services:
         fromDatabase:
           name: ekko-db
           property: connectionString
-      - key: ANTHROPIC_API_KEY # optional: the advisor runs rule-based without it
+      - key: GROQ_API_KEY      # optional: the advisor runs rule-based without it
         sync: false
 
 databases:

@@ -142,14 +142,14 @@ def architecture():
     s.rect(RX + 22, 178, 396, 316, WHITE, BLUE, 14, 2, shadow=True)
     s.text(RX + 42, 210, "Ekko API (backend)", 18, 800, BLUE)
     s.text(RX + 42, 234, "FastAPI · SQLAlchemy · JWT · Docker", 14, 600, INK2)
-    s.lines(RX + 42, 262, ["26 endpoints · OpenAPI docs · 50 tests",
+    s.lines(RX + 42, 262, ["26 endpoints · OpenAPI docs · 54 tests",
                            "auth: OTP (hashed, lock-out) · partner role",
                            "re-runs rules & re-prices every order",
                            "server-side KYC re-check (12 checks)",
                            "orders · live tracking · slot booking",
                            "partner leads (ranked) · earnings",
                            "DPDP: consent · export · erase · audit",
-                           "advisor: rule parser, AI only fallback",
+                           "advisor: rule parser, Groq LLM fallback",
                            "rate limits · security headers · masked logs"], 14, lh=1.42)
     s.arrow(RX + 140, 498, RX + 140, 528, BLUE)
     s.arrow(RX + 300, 498, RX + 300, 528, BLUE)
@@ -157,7 +157,7 @@ def architecture():
     s.text(RX + 36, 560, "Postgres / SQLite", 15, 800, BLUE)
     s.text(RX + 36, 584, "users · orders · audit", 12.5, 500, INK2)
     s.rect(RX + 228, 532, 190, 74, WHITE, BLUE, 12, 1.6, dash="6 4")
-    s.text(RX + 242, 560, "Claude (optional)", 15, 800, BLUE)
+    s.text(RX + 242, 560, "Groq LLM (optional)", 15, 800, BLUE)
     s.text(RX + 242, 584, "language only, fail-soft", 12.5, 500, INK2)
 
     s.text(RX + 22, 636, "Production integrations", 15, 800, INK)
@@ -192,12 +192,12 @@ def advisor_flow():
     s = Svg(2000, 760)
     s.text(40, 52, "Advisor request flow — AI understands, rules decide", 30, 800)
     s.text(40, 84, "A plan can never contain an ineligible product or an invented price", 17, 500, INK2)
-    cols = [("Owner", 170), ("Advisor UI", 470), ("On-device parser", 770), ("AI backend → Claude", 1080),
+    cols = [("Owner", 170), ("Advisor UI", 470), ("On-device parser", 770), ("Backend → Groq LLM", 1080),
             ("Rules engine", 1390), ("Pricing & Health", 1720)]
     for name, x in cols:
-        s.rect(x - 120, 112, 240, 52, INK if name == "Owner" else (BLUE if "AI" in name else (RED if "Rules" in name else WHITE)),
+        s.rect(x - 120, 112, 240, 52, INK if name == "Owner" else (BLUE if "Groq" in name else (RED if "Rules" in name else WHITE)),
                INK if name == "Owner" else LINE, 12)
-        dark = name in ("Owner",) or "AI" in name or "Rules" in name
+        dark = name in ("Owner",) or "Groq" in name or "Rules" in name
         s.text(x, 145, name, 17, 800, WHITE if dark else INK, "middle")
         s.add(f'<line x1="{x}" y1="166" x2="{x}" y2="720" stroke="{LINE}" stroke-width="2" stroke-dasharray="4 6"/>')
 
@@ -210,8 +210,8 @@ def advisor_flow():
     s.rect(610, 282, 320, 60, GREEN_S, "#BFE5CF", 10)
     s.text(770, 306, "numbers, cities, business types,", 13, 600, GREEN, "middle")
     s.text(770, 326, "GSTIN regex, Devanagari digits", 13, 600, GREEN, "middle")
-    msg(372, "On-device parser", "AI backend → Claude", "not understood → free text", BLUE)
-    msg(412, "AI backend → Claude", "On-device parser", "profile fields as strict JSON (or null → offline chips)", BLUE, "6 5")
+    msg(372, "On-device parser", "Backend → Groq LLM", "not understood → free text", BLUE)
+    msg(412, "Backend → Groq LLM", "On-device parser", "profile fields as strict JSON (or null → offline chips)", BLUE, "6 5")
     msg(462, "Advisor UI", "Rules engine", "BusinessProfile: segment, size, sites, tier, GST status, needs, pincode", RED)
     s.rect(1240, 482, 300, 108, RED_S, "#F5B5B5", 10)
     s.lines(1260, 506, ["tier · active GSTIN · min staff", "min sites · dependencies", "fibre feasibility · budget",
