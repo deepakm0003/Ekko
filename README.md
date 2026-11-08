@@ -8,9 +8,9 @@
 **Team Code Sync — Deepak Meena · Sourabh Yadav (IIIT Delhi)**
 Airtel Sync 2026 · Digital Track · Case: *Project Udyam Digital*
 
-[▶ **Watch the demo**](https://youtube.com/shorts/4LlFCjojVFk) · [⬇ **Download the APK**](https://github.com/deepakm0003/Ekko/releases/latest) · [🏗 Architecture](#architecture) · [📊 Research](RESEARCH_Udyam_Digital.md)
+[▶ **Watch the demo**](https://youtube.com/shorts/4LlFCjojVFk) · [⬇ **Download the APK**](https://github.com/deepakm0003/Ekko/releases/latest) · [🟢 **Live API**](https://ekko-api-lgxz.onrender.com/docs) · [🏗 Architecture](#architecture) · [📊 Research](RESEARCH_Udyam_Digital.md)
 
-![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-26%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2054%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
+![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-26%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2055%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
 
 </div>
 
@@ -149,11 +149,13 @@ erDiagram
 
 An append-only `audit_log` table records logins, consents, KYC runs, orders and exports (details are masked).
 
-### Backend API — 26 endpoints ([`ekko_backend/`](ekko_backend))
+### Backend API — 27 endpoints ([`ekko_backend/`](ekko_backend)) · live at [ekko-api-lgxz.onrender.com/docs](https://ekko-api-lgxz.onrender.com/docs)
+
+> Hosted on Render (Docker, Singapore) with managed Postgres. The free plan sleeps when idle: the first request can take ~50 s to wake it. Check [`/ready`](https://ekko-api-lgxz.onrender.com/ready) and [`/ready/ai`](https://ekko-api-lgxz.onrender.com/ready/ai).
 
 | Area | Endpoints | What the server guarantees |
 |---|---|---|
-| Ops | `GET /health` · `GET /ready` | readiness checks DB + reference data (25 products, 3,534 GSTIN, 2,723 Udyam, model AUC) |
+| Ops | `GET /health` · `GET /ready` · `GET /ready/ai` | readiness checks DB + reference data (25 products, 3,534 GSTIN, 2,723 Udyam, model AUC) |
 | Auth | `POST /v1/auth/otp/request` · `/otp/verify` · `/partner` | OTP stored as PBKDF2 hash, 5-minute expiry, 5-attempt lock-out; JWT with role (owner / partner) |
 | Plans | `GET /v1/catalogue` · `POST /v1/plans/recommend` · `/plans/quote` | Python port of the app's rules engine; every bundle checked, priced server-side |
 | Registry | `GET /v1/registry/gstin/{gstin}` · `/registry/udyam/{n}` | check digit before lookup; identifiers returned masked |
@@ -164,7 +166,7 @@ An append-only `audit_log` table records logins, consents, KYC runs, orders and 
 | DPDP | `GET/POST /v1/me/consents` · `GET /v1/me/export` · `DELETE /v1/me` · `GET /v1/me/audit` | consent log with notice version, full export, erasure, personal security log |
 
 **Hardening:** strict schemas (unknown fields rejected), per-IP rate limiting, request IDs, security headers (HSTS, nosniff, no-store), masked logs, non-root Docker image with health check, Postgres-ready via SQLAlchemy.
-**Verified:** 54 automated tests (`pytest`) cover the 13 advisor edge cases, a 1,792-profile rule sweep, all 12 KYC specimens, OTP lock-out, role checks, tampering attacks and DPDP erasure. Interactive docs at `/docs`.
+**Verified:** 55 automated tests (`pytest`) cover the 13 advisor edge cases, a 1,792-profile rule sweep, all 12 KYC specimens, OTP lock-out, role checks, tampering attacks and DPDP erasure. Interactive docs at `/docs`.
 
 ### Tech stack
 
@@ -224,7 +226,7 @@ An append-only `audit_log` table records logins, consents, KYC runs, orders and 
 
 | Real (runs on the phone) | Simulated in this prototype | Production path |
 |---|---|---|
-| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker use the case's mock registries · OTP shown on screen · UPI simulated · backend built and tested (54 tests) but not yet hosted; the app runs offline | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, hosted `ekko_backend/` (one-click Render blueprint) |
+| Rules engine & pricing, Smart KYC with on-device OCR, encryption, consent & privacy centre, propensity model, insights | GSTN / Udyam / DigiLocker use the case's mock registries · OTP shown on screen · UPI simulated · backend live on Render with Postgres (55 tests); the app also runs fully offline | Licensed GSP & DigiLocker APIs, SMS gateway with DLT registration, Razorpay, paid Render plan (no sleep) |
 
 ## Security & privacy (DPDP Act 2023)
 
@@ -239,7 +241,7 @@ An append-only `audit_log` table records logins, consents, KYC runs, orders and 
 
 ## Try it (APK)
 
-1. Download `Ekko-v1.1-arm64.apk` (most phones) or `Ekko-v1.1-armv7.apk` (older phones) from [Releases](https://github.com/deepakm0003/Ekko/releases/latest) and allow "install unknown apps".
+1. Download `Ekko-v1.2-arm64.apk` (most phones) or `Ekko-v1.2-armv7.apk` (older phones) from [Releases](https://github.com/deepakm0003/Ekko/releases/latest) and allow "install unknown apps".
 2. **Owner:** log in with any 10-digit mobile number (the OTP is shown on screen) → **Start**. In Smart KYC, tap **Demo: load a specimen applicant** (K01–K12). A pincode ending in **0** shows the "no fibre → 5G AirFiber" path.
 3. **Partner:** on the login screen tap **I am an Accel partner** (credentials in `ekko_app/lib/config/demo_seed.dart`).
 4. **Rules self-test:** Home → *Never sells the wrong plan*.
@@ -253,10 +255,10 @@ ekko_app/                Flutter app (Android)
   lib/screens/             onboarding, login, advisor, plan, consent, KYC, checkout, tracker, partner, insights, account, self-test
   tool/build_assets.py     builds app data (catalogue, registries, model, insights) from the case CSVs
   test/                    46 unit tests (advisor scenarios, pricing, 12 KYC applicants, OCR repair, self-test sweep)
-ekko_backend/            FastAPI service: auth, plans, KYC, orders, partner, DPDP (26 endpoints)
+ekko_backend/            FastAPI service: auth, plans, KYC, orders, partner, DPDP (27 endpoints)
   app/domain/              Python port of the rules engine, pricing, KYC validator, parser, propensity model
   app/routers/             auth · plans · orders · people (partner & privacy)
-  tests/                   54 pytest tests
+  tests/                   55 pytest tests
 .github/workflows/ci.yml backend tests + Docker build + Flutter analyze/test on every push
 docs/diagrams/           architecture diagrams (SVG/PNG) + generator
 ```
@@ -277,7 +279,7 @@ flutter build apk --release --split-per-abi --dart-define=EKKO_API=https://<your
 ```bash
 cd ekko_backend
 pip install -r requirements-dev.txt
-python -m pytest                       # 54 tests
+python -m pytest                       # 55 tests
 uvicorn app.main:app --port 8000       # docs at http://localhost:8000/docs
 # or: docker build -t ekko-api . && docker run -p 8000:8000 ekko-api
 ```
