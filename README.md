@@ -8,9 +8,9 @@
 **Team Code Sync — Deepak Meena · Sourabh Yadav (IIIT Delhi)**
 Airtel Sync 2026 · Digital Track · Case: *Project Udyam Digital*
 
-[▶ **Watch the demo**](https://youtube.com/shorts/4LlFCjojVFk) · [⬇ **Download the APK**](https://github.com/deepakm0003/Ekko/releases/latest) · [🟢 **Live API**](https://ekko-api-lgxz.onrender.com/docs) · [🏗 Architecture](#architecture) · [📊 Research](RESEARCH_Udyam_Digital.md)
+[▶ **Watch the demo**](https://youtube.com/shorts/4LlFCjojVFk) · [⬇ **Download the APK**](https://github.com/deepakm0003/Ekko/releases/latest) · [🟢 **Live API**](https://ekko-api-lgxz.onrender.com/docs) · [📑 **Pitch deck (PDF)**](docs/CodeSync_IIITDelhi.pdf) · [🏗 Architecture](#architecture) · [📊 Research](RESEARCH_Udyam_Digital.md)
 
-![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-26%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2055%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
+![Flutter](https://img.shields.io/badge/Flutter-3.35-02569B?logo=flutter) ![Dart](https://img.shields.io/badge/Dart-3.9-0175C2?logo=dart) ![FastAPI](https://img.shields.io/badge/FastAPI-27%20endpoints-009688?logo=fastapi) ![Tests](https://img.shields.io/badge/tests-46%20app%20%2B%2055%20backend-14804A) ![DPDP](https://img.shields.io/badge/DPDP%20Act%202023-by%20design-E40000)
 
 </div>
 
